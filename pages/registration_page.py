@@ -34,13 +34,19 @@ class RegistrationPage:
 
         # State and City dropdowns
         self.state_dropdown = page.locator("//div[@id='state']")
+        # self.state_options = page.locator("//div[@id='react-select-3-listbox']")  # Options within the state dropdown
+        # self.state_option = page.locator("//div[@id='react-select-3-option-0']")  # Individual state options
         self.city_dropdown = page.locator("//div[@id='city']")  
+        # self.city_options = page.locator("//div[@id='react-select-4-listbox']")  # Options within the city dropdown
+        # self.city_option = page.locator("//div[@id='react-select-4-option-0']")  # Individual city options
+
+        # These generic locators find ANY option inside the open menu
+        self.menu_options = page.locator("div[id^='react-select-'][id*='-option']")
+   
         # Submit button
         self.submit_btn = page.locator("//button[@id='submit']")
 
-    # def navigate(self):
-    #     self.page.goto("https://demoqa.com/automation-practice-form")
-
+    
     def navigate(self):
         # 1. Action: Navigate
         self.page.goto("https://demoqa.com/automation-practice-form")
@@ -165,21 +171,65 @@ class RegistrationPage:
         print(f"Verified: Date matches {expected_date}")
 
 
-    # def select_state_and_city(self, state, city):
-    #     # select state
-    #     expect(self.state_dropdown).to_be_visible()
-    #     expect(self.state_dropdown).to_be_enabled()
-    #     self.state_dropdown.click()
+    def select_state_and_city_using_css_selecting_option(self, state, city):
+        # --- 1. Select State ---
+        expect(self.state_dropdown).to_be_visible()
+        self.state_dropdown.click()
+        
+        # Locate the specific state option by its text and click it
+        # We use .get_by_text(state, exact=True) to ensure we don't click 
+        # "Uttar" if we wanted "Uttar Pradesh"
+        state_to_click = self.page.get_by_text(state, exact=True)
+        expect(state_to_click).to_be_visible()
+        state_to_click.click()
+        
+        print(f"Clicked state option: {state}")
 
-    #     # After clicking the state dropdown, we need to select the desired state
+        # --- 2. Select City ---
+        # The city dropdown usually takes a millisecond to become enabled 
+        # after the state is selected.
+        expect(self.city_dropdown).to_be_visible()
+        self.city_dropdown.click()
 
-    #     # Select the City
-    #     expect(self.city_dropdown).to_be_visible()
-    #     expect(self.city_dropdown).to_be_enabled()
-    #     self.city_dropdown.click()
+        # Locate the specific city option by its text and click it
+        city_to_click = self.page.get_by_text(city, exact=True)
+        expect(city_to_click).to_be_visible()
+        city_to_click.click()
+        
+        print(f"Clicked city option: {city}")
+
+    
+
+    def select_state_and_city_using_xpath_selecting_option(self, state, city):
+        # --- 1. Select State ---
+        expect(self.state_dropdown).to_be_visible()
+        self.state_dropdown.click()
+        
+        # Dynamic XPath to find the option by its text
+        # This looks for a div with the role 'option' that contains our state name
+        state_option_xpath = f"//div[@role='option' and text()='{state}']"
+        
+        expect(self.page.locator(state_option_xpath)).to_be_visible()
+        self.page.locator(state_option_xpath).click()
+        
+        print(f"XPath Verified: State '{state}' selected.")
+
+        # --- 2. Select City ---
+        expect(self.city_dropdown).to_be_visible()
+        expect(self.city_dropdown).to_be_enabled()
+        self.city_dropdown.click()
+
+        # Dynamic XPath for the city option
+        city_option_xpath = f"//div[@role='option' and text()='{city}']"
+        
+        expect(self.page.locator(city_option_xpath)).to_be_visible()
+        self.page.locator(city_option_xpath).click()
+        
+        print(f"XPath Verified: City '{city}' selected.")
 
 
-    def select_state_and_city(self, state, city):
+
+    def select_state_and_city_using_keyboard(self, state, city):
         # Click, type, and Enter for State
 
         expect(self.state_dropdown).to_be_visible()
@@ -190,8 +240,6 @@ class RegistrationPage:
         expect(self.state_dropdown).to_contain_text(state)
         print(f"Verified: State '{state}' is displayed.")
         # expect(self.state_dropdown).to_have_text(state)  # Verify the selected state is displayed
-
-        
         
         # Repeat for City
         expect(self.city_dropdown).to_be_visible()
@@ -203,8 +251,6 @@ class RegistrationPage:
         print(f"Verified: State '{state}' and City '{city}' selected successfully.")
 
 
-
-    
 
     def upload_file(self, file_path, file_name):
         # 1. Ensure the file input is visible and enabled before interacting
@@ -223,7 +269,7 @@ class RegistrationPage:
         print(f"Verified: File '{file_name}' uploaded successfully from absolute path.")
 
 
-    def fill_form(self, fname, lname, email, phone_num , gender=None, subjects=None, hobbies=[], address=None, day=None, month=None, year=None, file_path=None, file_name=None, state=None, city=None):
+    def fill_form(self, fname, lname, email, phone_num , gender=None, subjects=None, hobbies=[], address=None, day=None, month=None, year=None, file_path=None, file_name=None, state=None, city=None, sate_city_selection_method=None):
         # Call your generic method for each field
         
         self.fill_and_verify(self.first_name, fname)
@@ -258,9 +304,14 @@ class RegistrationPage:
         # Now you can call the file upload method with the path to your file
         self.upload_file(file_path, file_name)  # Example of uploading a file
 
-        # selecting state and city using the method we defined
-        self.select_state_and_city(state, city)  # Example of selecting state and city from dropdowns
-        
+        if sate_city_selection_method == "keyboard":
+            self.select_state_and_city_using_keyboard(state, city)
+        elif sate_city_selection_method == "selecting_option":
+            self.select_state_and_city_using_css_selecting_option(state, city)
+
+
+        self.select_state_and_city_using_xpath_selecting_option(state, city)  # Example of selecting state and city using the option clicking method
+
 
         # Finally, submit the form
         expect(self.submit_btn).to_be_visible()

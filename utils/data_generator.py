@@ -45,5 +45,6 @@ class DataGenerator:
             "file_path": file_path + "/",
             "file_name": "file_upload_example.jpeg",
             "state": random_state,
-            "city": random_city
+            "city": random_city,
+            "sate_city_selection_method": random.choice(["keyboard", "selecting_option"])  # Randomly choose a method for selecting state and city
         }
