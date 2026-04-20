@@ -1,30 +1,27 @@
+import pytest
 from pages.registration_page import RegistrationPage
-def test_full_registration(page):
+from utils.data_generator import DataGenerator # New Import
 
-    # 1. Initialize the RegistrationPage object
+
+# This decorator tells pytest to run this function 2 times
+# We use "_" because we don't actually need to use the number inside the test
+@pytest.mark.parametrize("iteration", range(2))
+def test_full_registration(page, iteration):
+    # 1. Initialize Objects
     reg_page = RegistrationPage(page)
+    data_gen = DataGenerator()
+    
+    # 2. Get the generated data dictionary
+    # Every time the loop runs, get_registration_data() generates NEW random values
+    test_data = data_gen.get_registration_data()
 
-    # 2. Navigate to the registration form
+    # 3. Navigate
     reg_page.navigate()
 
-    # 3. Call your method
-    first_name = "Muhammad"
-    last_name = "Zeeshan"
-    email = "zeeshan@example.com"
-    phone = "0320840239"
-    gender = "male"
-    subjects = "Maths, Physics"
-    hobbies = ["Sports", "Reading"]
-    address = "123 Main St, Anytown"
+    # 4. Fill the form using Dictionary Unpacking (**)
+    # This sends all dictionary values to the matching parameters in fill_form
+    reg_page.fill_form(**test_data)
 
-    day = "9"
-    month = "January"
-    year = "1970"
+    print(f"Completed iteration {iteration + 1} with user: {test_data['fname']}")
 
-    file_path = "/home/ibraheem/Music/vfairs/registrationFormPlaywright/file_upload/"  # Update this path to your actual picture file
-    file_name = "file_upload_example.jpeg"  # The name of the file to be uploaded
-
-    state = "Uttar Pradesh"
-    city = "Lucknow"
-    reg_page.fill_form(first_name, last_name, email, phone, gender, subjects, hobbies, address ,day , month, year, file_path, file_name, state, city)
-    page.wait_for_timeout(10000)  # Wait for 5 seconds to observe the filled form (optional)
+    # page.wait_for_timeout(3000)

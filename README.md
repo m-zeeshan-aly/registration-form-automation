@@ -17,20 +17,25 @@ The test suite automates filling out a complex registration form on [DemoQA](htt
 ## 🎯 What This Project Does
 
 The automation suite:
-1. **Navigates** to the DemoQA Practice Form
-2. **Fills** all form fields with realistic test data
-3. **Validates** each field after interaction (visibility, enabled state, correct values)
-4. **Selects** dates from a date picker component
-5. **Uploads** files to the form
-6. **Selects** options from dropdown menus
-7. **Submits** the completed form
-8. **Verifies** all interactions were successful
+1. **Generates** random, realistic test data using the **Faker** library
+2. **Runs stress tests** by executing the same test multiple times with different data sets
+3. **Navigates** to the DemoQA Practice Form
+4. **Fills** all form fields with dynamically generated test data
+5. **Validates** each field after interaction (visibility, enabled state, correct values)
+6. **Selects** dates from a date picker component using random date generation
+7. **Uploads** files to the form
+8. **Selects** options from dropdown menus with proper state-city relationships
+9. **Submits** the completed form
+10. **Verifies** all interactions were successful
 
 This project serves as a practical example of:
 - The **Page Object Model (POM)** pattern for maintainable test code
+- **Data-driven testing** using parametrization for stress testing
+- **Faker library** integration for realistic test data generation
 - Best practices for Playwright automation with pytest
 - Form field interactions and validations
 - Proper test setup and teardown
+- Dynamic test execution with multiple iterations
 
 ## 📦 Prerequisites
 
@@ -69,6 +74,7 @@ This will install:
 - **pytest** - Testing framework
 - **pytest-playwright** - Pytest plugin for Playwright
 - **pytest-base-url** - Base URL fixture for pytest
+- **Faker** - Library for generating realistic test data (names, emails, addresses, phone numbers, etc.)
 
 ### 4. Install Playwright Browsers
 ```bash
@@ -129,7 +135,10 @@ registrationFormPlaywright/
 │   └── registration_page.py    # Page Object Model for the registration form
 │
 ├── tests/
-│   └── test_registration.py    # Test cases for form automation
+│   └── test_registration.py    # Test cases for form automation (parametrized for multiple iterations)
+│
+├── utils/
+│   └── data_generator.py       # DataGenerator class using Faker for realistic test data
 │
 ├── file_upload/
 │   └── file_upload_example.jpeg # Sample file for upload test
@@ -150,6 +159,22 @@ registrationFormPlaywright/
 - Adds 500ms slowdown for visibility
 - Enables console output
 
+### `utils/data_generator.py` 🆕
+**DataGenerator class for dynamic test data:**
+- Uses **Faker** library to generate realistic test data
+- `get_registration_data()` - Returns a dictionary with random:
+  - First and last names
+  - Email addresses
+  - Phone numbers (Indian format)
+  - Gender (male, female, other)
+  - Date of birth (ages 18-60)
+  - Addresses with proper formatting
+  - Subjects and hobbies
+  - State and city with proper relationships (state-city mapping)
+  - File path and upload filename
+- Ensures **state-city relationships** are realistic (e.g., Delhi with NCR, Lucknow with Uttar Pradesh)
+- Each call generates completely new random data
+
 ### `pages/registration_page.py`
 **Page Object containing:**
 - `navigate()` - Navigates to the form and verifies successful navigation
@@ -159,28 +184,99 @@ registrationFormPlaywright/
 - `select_dob()` - Interacts with the date picker
 - `upload_file()` - Handles file upload
 - `select_state_and_city()` - Selects from dropdown menus
-- `fill_form()` - Main method that orchestrates filling the entire form
+- `fill_form()` - Main method that orchestrates filling the entire form using dictionary unpacking
 
 ### `tests/test_registration.py`
-**Main test case:**
+**Main test case with stress testing approach:**
 - `test_full_registration()` - Complete end-to-end registration form test
-- Uses sample data for all form fields
-- Validates each step of the form submission
+- **Parametrized** with `@pytest.mark.parametrize("iteration", range(2))` to run the test **2 times**
+- Each iteration generates **completely new random data** via `DataGenerator`
+- Uses **dictionary unpacking** (`**test_data`) to pass data to the form
+- Useful for stress testing and validating the application with multiple data sets
+- Print statements show which iteration and user data were processed
 
-## 📊 Test Data
+## 📊 Test Data - Dynamic Generation
 
-The test uses the following sample data:
-- **Name:** Muhammad Zeeshan
-- **Email:** zeeshan@example.com
-- **Phone:** 0320840239
-- **Gender:** Male
-- **Date of Birth:** 9 January 1970
-- **Subjects:** Maths, Physics
-- **Hobbies:** Sports, Reading
-- **Address:** 123 Main St, Anytown
-- **State:** Uttar Pradesh
-- **City:** Lucknow
-- **Picture:** file_upload_example.jpeg
+**Instead of hardcoded data, the test suite now uses dynamic, realistic data generation:**
+
+The `DataGenerator` class generates new random data for each test iteration:
+```python
+from utils.data_generator import DataGenerator
+
+data_gen = DataGenerator()
+test_data = data_gen.get_registration_data()
+```
+
+**Sample generated data structure:**
+```python
+{
+    "fname": "John",                          # Random first name
+    "lname": "Smith",                         # Random last name
+    "email": "john.smith@example.com",        # Random email
+    "phone_num": "9876543210",                # Random phone (10 digits)
+    "gender": "male",                         # Random gender
+    "subjects": "Maths",                      # Fixed subject
+    "hobbies": ["Sports", "Music"],           # Fixed hobbies
+    "address": "123 Main St, City, Country",  # Random address
+    "day": "15",                              # Random day (18-60 age range)
+    "month": "March",                         # Random month (full name)
+    "year": "1985",                           # Random year
+    "file_path": "file_upload/",              # Upload directory
+    "file_name": "file_upload_example.jpeg",  # Upload filename
+    "state": "Haryana",                       # Random state
+    "city": "Karnal"                          # City matching the state
+}
+```
+
+**Stress Testing:** The test runs **2 iterations** (`range(2)`) by default with completely different data each time. To increase iterations, modify:
+```python
+@pytest.mark.parametrize("iteration", range(5))  # Now runs 5 times
+```
+
+## ⚡ Stress Testing & Data Generation
+
+### Dynamic Test Data with Faker
+This project uses the **Faker** library to generate realistic, random test data:
+- **Names:** Random first and last names
+- **Emails:** Random email addresses
+- **Phone Numbers:** Indian format phone numbers
+- **Addresses:** Realistic multi-line addresses
+- **Dates:** Random dates of birth (ages 18-60)
+- **Locations:** State-city pairs with proper relationships
+
+### Running Parametrized Tests (Stress Testing)
+The test is parametrized to run **multiple iterations** with different data each time:
+
+```bash
+# Run tests (default 2 iterations per test)
+pytest -s
+
+# Each iteration uses NEW random data
+# Example output:
+# Completed iteration 1 with user: John
+# Completed iteration 2 with user: Sarah
+```
+
+### Customizing Test Iterations
+Modify the number of test iterations in [tests/test_registration.py](tests/test_registration.py):
+
+```python
+# Current: runs 2 times
+@pytest.mark.parametrize("iteration", range(2))
+
+# Change to 5 iterations:
+@pytest.mark.parametrize("iteration", range(5))
+
+# Change to 10 iterations for heavier stress testing:
+@pytest.mark.parametrize("iteration", range(10))
+```
+
+### Why This Approach?
+✅ **Comprehensive Testing** - Tests with multiple data variations  
+✅ **Real-world Simulation** - Uses realistic data patterns  
+✅ **Stress Testing** - Validates form with many different inputs  
+✅ **Reproducible** - Each run has different data but predictable patterns  
+✅ **Maintainable** - No hardcoded test data to maintain
 
 ## 🐛 Troubleshooting
 
