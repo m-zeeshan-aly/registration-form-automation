@@ -172,6 +172,7 @@ registrationFormPlaywright/
   - Subjects and hobbies
   - State and city with proper relationships (state-city mapping)
   - File path and upload filename
+  - **State/City selection method** - Randomly chooses between "keyboard" or "selecting_option" strategies
 - Ensures **state-city relationships** are realistic (e.g., Delhi with NCR, Lucknow with Uttar Pradesh)
 - Each call generates completely new random data
 
@@ -183,16 +184,19 @@ registrationFormPlaywright/
 - `check_checkboxs()` - Selects multiple checkboxes for hobbies
 - `select_dob()` - Interacts with the date picker
 - `upload_file()` - Handles file upload
-- `select_state_and_city()` - Selects from dropdown menus
+- `select_state_and_city_using_keyboard()` - Selects from dropdowns using keyboard input (type and Enter)
+- `select_state_and_city_using_css_selecting_option()` - Selects from dropdowns using CSS selectors and get_by_text()
+- `select_state_and_city_using_xpath_selecting_option()` - Selects from dropdowns using dynamic XPath with role='option'
 - `fill_form()` - Main method that orchestrates filling the entire form using dictionary unpacking
 
 ### `tests/test_registration.py`
 **Main test case with stress testing approach:**
 - `test_full_registration()` - Complete end-to-end registration form test
-- **Parametrized** with `@pytest.mark.parametrize("iteration", range(2))` to run the test **2 times**
+- **Parametrized** with `@pytest.mark.parametrize("iteration", range(5))` to run the test **5 times**
 - Each iteration generates **completely new random data** via `DataGenerator`
 - Uses **dictionary unpacking** (`**test_data`) to pass data to the form
-- Useful for stress testing and validating the application with multiple data sets
+- Each iteration also uses a **randomly selected state/city selection method** for testing different UI interaction patterns
+- Useful for stress testing and validating the application with multiple data sets and interaction strategies
 - Print statements show which iteration and user data were processed
 
 ## 📊 Test Data - Dynamic Generation
@@ -224,7 +228,8 @@ test_data = data_gen.get_registration_data()
     "file_path": "file_upload/",              # Upload directory
     "file_name": "file_upload_example.jpeg",  # Upload filename
     "state": "Haryana",                       # Random state
-    "city": "Karnal"                          # City matching the state
+    "city": "Karnal",                         # City matching the state
+    "sate_city_selection_method": "keyboard"  # Random method: "keyboard" or "selecting_option"
 }
 ```
 
@@ -248,24 +253,27 @@ This project uses the **Faker** library to generate realistic, random test data:
 The test is parametrized to run **multiple iterations** with different data each time:
 
 ```bash
-# Run tests (default 2 iterations per test)
+# Run tests (default 5 iterations per test)
 pytest -s
 
-# Each iteration uses NEW random data
+# Each iteration uses NEW random data and a randomly selected state/city selection method
 # Example output:
-# Completed iteration 1 with user: John
-# Completed iteration 2 with user: Sarah
+# Completed iteration 1 with user: John (keyboard method)
+# Completed iteration 2 with user: Sarah (selecting_option method)
+# Completed iteration 3 with user: Mike (keyboard method)
+# Completed iteration 4 with user: Emma (selecting_option method)
+# Completed iteration 5 with user: Alex (keyboard method)
 ```
 
 ### Customizing Test Iterations
 Modify the number of test iterations in [tests/test_registration.py](tests/test_registration.py):
 
 ```python
-# Current: runs 2 times
-@pytest.mark.parametrize("iteration", range(2))
-
-# Change to 5 iterations:
+# Current: runs 5 times
 @pytest.mark.parametrize("iteration", range(5))
+
+# Change to 2 iterations (lighter testing):
+@pytest.mark.parametrize("iteration", range(2))
 
 # Change to 10 iterations for heavier stress testing:
 @pytest.mark.parametrize("iteration", range(10))
@@ -274,9 +282,31 @@ Modify the number of test iterations in [tests/test_registration.py](tests/test_
 ### Why This Approach?
 ✅ **Comprehensive Testing** - Tests with multiple data variations  
 ✅ **Real-world Simulation** - Uses realistic data patterns  
-✅ **Stress Testing** - Validates form with many different inputs  
+✅ **Stress Testing** - Validates form with many different inputs AND different UI interaction methods  
+✅ **Multiple Interaction Patterns** - Tests dropdown selection via keyboard, CSS selectors, and XPath  
 ✅ **Reproducible** - Each run has different data but predictable patterns  
 ✅ **Maintainable** - No hardcoded test data to maintain
+
+## 🎯 State and City Selection Methods
+
+The test suite now includes **three different strategies** for selecting state and city from dropdown menus:
+
+### 1. **Keyboard Method** (`keyboard`)
+- Types the value and presses Enter
+- Simulates user typing behavior
+- Method: `select_state_and_city_using_keyboard()`
+
+### 2. **CSS Selector Method** (`selecting_option`)
+- Uses `get_by_text()` to find and click specific options
+- Cleaner, more readable approach
+- Method: `select_state_and_city_using_css_selecting_option()`
+
+### 3. **XPath Method** (always executed)
+- Uses dynamic XPath with `role='option'` attribute
+- Most robust for complex dropdown structures
+- Method: `select_state_and_city_using_xpath_selecting_option()`
+
+Each test iteration randomly selects between "keyboard" and "selecting_option" methods, while the XPath method is always executed as an additional verification step.
 
 ## 🐛 Troubleshooting
 
