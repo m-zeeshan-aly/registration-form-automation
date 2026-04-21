@@ -16,7 +16,8 @@ def test_full_registration(page, iteration):
     test_data = data_gen.get_registration_data()
 
     # 3. Navigate
-    reg_page.navigate()
+    url = "https://demoqa.com/automation-practice-form"
+    reg_page.navigate(url)
 
     # 4. Fill the form using Dictionary Unpacking (**)
     # This sends all dictionary values to the matching parameters in fill_form
