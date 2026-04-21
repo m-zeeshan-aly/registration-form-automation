@@ -166,7 +166,7 @@ registrationFormPlaywright/
   - First and last names
   - Email addresses
   - Phone numbers (Indian format)
-  - Gender (male, female, other)
+  - Gender (Male, Female, Other) - **Capitalized for use with dynamic XPath selectors**
   - Date of birth (ages 18-60)
   - Addresses with proper formatting
   - Subjects and hobbies
@@ -176,26 +176,36 @@ registrationFormPlaywright/
 - Ensures **state-city relationships** are realistic (e.g., Delhi with NCR, Lucknow with Uttar Pradesh)
 - Each call generates completely new random data
 
-### `pages/registration_page.py`
-**Page Object containing:**
+### `pages/registration_page.py` - ✨ **Refactored with Dynamic XPath Templates**
+**Dynamic XPath Templates (Class Constants):**
+- `DYNAMIC_FIELD_XPATH_INPUT` - Selects input/textarea fields by placeholder text
+- `DYNAMIC_FIELD_XPATH_RADIO` - Selects radio buttons by value
+- `DYNAMIC_CHECKBOX_BY_LABEL` - Selects checkboxes by label text
+- `DYNAMIC_DROPDOWN_CONTAINER` - Selects dropdown container by ID
+- `DYNAMIC_DROPDOWN_OPTION` - Selects dropdown options by text with role='option'
+- `DATE_SELECT_TEMPLATE` - Selects date picker dropdowns (month/year)
+- `DAY_TEMPLATE` - Selects specific days in the calendar grid
+
+**Key Methods:**
 - `navigate()` - Navigates to the form and verifies successful navigation
+- `fill_input()` - **NEW** - Dynamically fills input fields using placeholder text
 - `fill_and_verify()` - Fills a field and validates the input
-- `check_radio()` - Selects a radio button
-- `check_checkboxs()` - Selects multiple checkboxes for hobbies
-- `select_dob()` - Interacts with the date picker
+- `select_gender_radio_button()` - **REFACTORED** - Dynamically selects radio buttons by value
+- `check_checkboxs()` - **REFACTORED** - Selects multiple checkboxes using dynamic labels
+- `select_dob()` - **REFACTORED** - Uses dynamic date picker templates
+- `verify_date_ui()` - **NEW** - Separated verification logic for date validation
 - `upload_file()` - Handles file upload
-- `select_state_and_city_using_keyboard()` - Selects from dropdowns using keyboard input (type and Enter)
-- `select_state_and_city_using_css_selecting_option()` - Selects from dropdowns using CSS selectors and get_by_text()
-- `select_state_and_city_using_xpath_selecting_option()` - Selects from dropdowns using dynamic XPath with role='option'
+- `select_dropdown_option_dynamically()` - **NEW** - Generic dropdown selection by clicking options
+- `select_dropdown_option_dynamically_method_fill()` - **NEW** - Generic dropdown selection using keyboard
 - `fill_form()` - Main method that orchestrates filling the entire form using dictionary unpacking
 
 ### `tests/test_registration.py`
 **Main test case with stress testing approach:**
 - `test_full_registration()` - Complete end-to-end registration form test
-- **Parametrized** with `@pytest.mark.parametrize("iteration", range(5))` to run the test **5 times**
+- **Parametrized** with `@pytest.mark.parametrize("iteration", range(1))` to run the test **1 time** (customizable for stress testing)
 - Each iteration generates **completely new random data** via `DataGenerator`
 - Uses **dictionary unpacking** (`**test_data`) to pass data to the form
-- Each iteration also uses a **randomly selected state/city selection method** for testing different UI interaction patterns
+- Each iteration uses a **randomly selected state/city selection method** for testing different UI interaction patterns
 - Useful for stress testing and validating the application with multiple data sets and interaction strategies
 - Print statements show which iteration and user data were processed
 
@@ -218,7 +228,7 @@ test_data = data_gen.get_registration_data()
     "lname": "Smith",                         # Random last name
     "email": "john.smith@example.com",        # Random email
     "phone_num": "9876543210",                # Random phone (10 digits)
-    "gender": "male",                         # Random gender
+    "gender": "Male",                         # Random gender (Male, Female, Other)
     "subjects": "Maths",                      # Fixed subject
     "hobbies": ["Sports", "Music"],           # Fixed hobbies
     "address": "123 Main St, City, Country",  # Random address
@@ -233,9 +243,9 @@ test_data = data_gen.get_registration_data()
 }
 ```
 
-**Stress Testing:** The test runs **2 iterations** (`range(2)`) by default with completely different data each time. To increase iterations, modify:
+**Stress Testing:** The test runs **1 iteration** by default. To increase iterations for stress testing, modify:
 ```python
-@pytest.mark.parametrize("iteration", range(5))  # Now runs 5 times
+@pytest.mark.parametrize("iteration", range(5))  # Runs 5 times with different data each iteration
 ```
 
 ## ⚡ Stress Testing & Data Generation
@@ -253,60 +263,78 @@ This project uses the **Faker** library to generate realistic, random test data:
 The test is parametrized to run **multiple iterations** with different data each time:
 
 ```bash
-# Run tests (default 5 iterations per test)
+# Run tests (default 1 iteration)
 pytest -s
 
 # Each iteration uses NEW random data and a randomly selected state/city selection method
 # Example output:
 # Completed iteration 1 with user: John (keyboard method)
-# Completed iteration 2 with user: Sarah (selecting_option method)
-# Completed iteration 3 with user: Mike (keyboard method)
-# Completed iteration 4 with user: Emma (selecting_option method)
-# Completed iteration 5 with user: Alex (keyboard method)
 ```
 
 ### Customizing Test Iterations
 Modify the number of test iterations in [tests/test_registration.py](tests/test_registration.py):
 
 ```python
-# Current: runs 5 times
-@pytest.mark.parametrize("iteration", range(5))
+# Current: runs 1 time
+@pytest.mark.parametrize("iteration", range(1))
 
-# Change to 2 iterations (lighter testing):
-@pytest.mark.parametrize("iteration", range(2))
+# Change to 5 iterations:
+@pytest.mark.parametrize("iteration", range(5))
 
 # Change to 10 iterations for heavier stress testing:
 @pytest.mark.parametrize("iteration", range(10))
 ```
 
 ### Why This Approach?
-✅ **Comprehensive Testing** - Tests with multiple data variations  
-✅ **Real-world Simulation** - Uses realistic data patterns  
-✅ **Stress Testing** - Validates form with many different inputs AND different UI interaction methods  
-✅ **Multiple Interaction Patterns** - Tests dropdown selection via keyboard, CSS selectors, and XPath  
-✅ **Reproducible** - Each run has different data but predictable patterns  
-✅ **Maintainable** - No hardcoded test data to maintain
+✅ **DRY Principle** - Uses dynamic XPath templates instead of hardcoded locators  
+✅ **Reusable Methods** - Generic functions work with any field using placeholders/IDs  
+✅ **Maintainable** - Single method definition handles multiple form fields  
+✅ **Scalable** - Add new fields without creating new methods  
+✅ **Flexible** - Supports multiple interaction strategies (keyboard vs clicking)  
+✅ **Comprehensive Testing** - Tests with multiple data variations and interaction methods
 
-## 🎯 State and City Selection Methods
+## 🎯 Dynamic XPath Template Approach
 
-The test suite now includes **three different strategies** for selecting state and city from dropdown menus:
+Instead of hardcoding individual methods for each field, the refactored code uses **parameterized XPath templates**:
 
-### 1. **Keyboard Method** (`keyboard`)
-- Types the value and presses Enter
-- Simulates user typing behavior
-- Method: `select_state_and_city_using_keyboard()`
+### **Dynamic Input Fields** (`DYNAMIC_FIELD_XPATH_INPUT`)
+```python
+# Uses placeholder text to find fields dynamically
+self.fill_input("First Name", "John")
+self.fill_input("Last Name", "Doe")
+self.fill_input("Current Address", "123 Main St")
+# Works with ANY input or textarea field with a matching placeholder
+```
 
-### 2. **CSS Selector Method** (`selecting_option`)
-- Uses `get_by_text()` to find and click specific options
-- Cleaner, more readable approach
-- Method: `select_state_and_city_using_css_selecting_option()`
+### **Dynamic Radio Buttons** (`DYNAMIC_FIELD_XPATH_RADIO`)
+```python
+# Uses value attribute to select radio buttons dynamically
+self.select_gender_radio_button("Male")
+self.select_gender_radio_button("Female")
+self.select_gender_radio_button("Other")
+```
 
-### 3. **XPath Method** (always executed)
-- Uses dynamic XPath with `role='option'` attribute
-- Most robust for complex dropdown structures
-- Method: `select_state_and_city_using_xpath_selecting_option()`
+### **Dynamic Checkboxes** (`DYNAMIC_CHECKBOX_BY_LABEL`)
+```python
+# Selects checkboxes by their label text
+self.check_checkboxs(["Sports", "Music"])
+# Works with ANY checkbox with a matching label
+```
 
-Each test iteration randomly selects between "keyboard" and "selecting_option" methods, while the XPath method is always executed as an additional verification step.
+### **Dynamic Dropdown Selection** (Two Methods)
+**Method 1 - Clicking Options:**
+```python
+self.select_dropdown_option_dynamically("state", "Haryana")
+# Opens dropdown by ID, finds and clicks option by text
+```
+
+**Method 2 - Keyboard Input:**
+```python
+self.select_dropdown_option_dynamically_method_fill("city", "Karnal")
+# Opens dropdown, types value, and presses Enter
+```
+
+Each test iteration randomly selects between these methods for testing different UI interaction patterns.
 
 ## 🐛 Troubleshooting
 

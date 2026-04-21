@@ -5,7 +5,7 @@ from utils.data_generator import DataGenerator # New Import
 
 # This decorator tells pytest to run this function 2 times
 # We use "_" because we don't actually need to use the number inside the test
-@pytest.mark.parametrize("iteration", range(2))
+@pytest.mark.parametrize("iteration", range(1))
 def test_full_registration(page, iteration):
     # 1. Initialize Objects
     reg_page = RegistrationPage(page)

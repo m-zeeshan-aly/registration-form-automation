@@ -34,7 +34,7 @@ class DataGenerator:
             "lname": self.fake.last_name(),
             "email": self.fake.ascii_free_email(),
             "phone_num": self.fake.msisdn()[:10],
-            "gender": random.choice(["male", "female", "other"]),
+            "gender": random.choice(["Male", "Female", "Other"]),
             "subjects": "Maths",
             "hobbies": ["Sports", "Music"],
             "address": self.fake.address().replace("\n", ", "),
