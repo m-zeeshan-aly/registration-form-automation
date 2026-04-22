@@ -8,7 +8,6 @@ from utils.data_generator import DataGenerator # New Import
 @pytest.mark.parametrize("iteration", range(1))
 def test_full_registration(page, iteration):
     # 1. Initialize Objects
-    reg_page = RegistrationPage(page)
     data_gen = DataGenerator()
     
     # 2. Get the generated data dictionary
@@ -17,12 +16,14 @@ def test_full_registration(page, iteration):
 
     # 3. Navigate
     url = "https://demoqa.com/automation-practice-form"
-    reg_page.navigate(url)
+    # reg_page.navigate(url)
+    RegistrationPage.navigate(page,url)
 
+    
     # 4. Fill the form using Dictionary Unpacking (**)
     # This sends all dictionary values to the matching parameters in fill_form
-    reg_page.fill_form(**test_data)
+    RegistrationPage.fill_form(page, **test_data)
 
-    print(f"Completed iteration {iteration + 1} with user: {test_data['fname']}")
+    # print(f"Completed iteration {iteration + 1} with user: {test_data['fname']}")
 
     # page.wait_for_timeout(3000)
