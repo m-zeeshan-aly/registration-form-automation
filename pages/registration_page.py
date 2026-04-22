@@ -54,8 +54,7 @@ class RegistrationPage:
         return self.page.locator(self.DATE_SELECT_TEMPLATE.format(type=type))
     
     def get_day_locator(self, day):
-        formatted_day = str(day).zfill(3)
-        return self.page.locator(self.DAY_TEMPLATE.format(day=formatted_day))
+        return self.page.locator(self.DAY_TEMPLATE.format(day=day))
     
     def navigate(self,url):
         # 1. Action: Navigate
@@ -74,28 +73,23 @@ class RegistrationPage:
 
 
     def type_text(self, locator, value):
-        """A robust action method that handles visibility, filling, and verification."""
-        expect(locator).to_be_visible()
-        expect(locator).to_be_enabled()
         locator.fill(value)
         return locator
 
 
-    def check_hobby(self, hobby_name):
-        locator = self.get_checkbox(hobby_name)
-        expect(locator).to_be_visible()
+    def check_hobby(self, hobby_locator):
         # On DemoQA, the input is often hidden; clicking the label sibling is safer
         # but since .check() works for you, we keep it robust:
-        if not locator.is_checked():
-            locator.check()
-        return locator
+        if not hobby_locator.is_checked():
+            hobby_locator.check()
+        return hobby_locator
 
     def select_gender(self, gender_name):
         locator = self.get_radio(gender_name)
         locator.check()
         return locator
 
-    def verify_date_ui(self, day, month, year):
+    def format_date_of_birth(self, day, month, year):
         # --- 5. DYNAMIC VERIFICATION LOGIC ---
         # DemoQA displays the date in the input field as: "DD Mon YYYY" (e.g., 05 Apr 2026)
         
@@ -107,58 +101,43 @@ class RegistrationPage:
         
         # Construct the expected string
         expected_date_string = f"{formatted_day_ui} {short_month} {year}"
-        
-        # Get actual value from the input field
-        actual_date_value = self.page.locator(self.DATE_INPUT).input_value()
+
+        return expected_date_string
+
+
+    def verify_selected_date(self, actual_date_value, expected_date_string):
         
         # Professional Assertion
         assert actual_date_value == expected_date_string, f"Date mismatch! Expected '{expected_date_string}' but found '{actual_date_value}'"
         
         print(f"Verified: Date of Birth successfully set to '{expected_date_string}'.")
 
-    def select_dob(self, day, month, year):
-        # 1. Open Calendar
-        self.get_date_input().click()
+    def select_date_of_birth(self, day, month, year):
 
-        # 2. Select Month & Year
+        # 1. Select Month & Year
         # Note: We call .select_option() on the LOCATOR returned by our getter
         self.get_date_select("month").select_option(label=month)
         self.get_date_select("year").select_option(value=str(year))
 
-        # 3. Select Day
+        # 2. Select Day
+        day = str(day).zfill(3)
         self.get_day_locator(day).click()
 
 
-    def select_dropdown_by_type(self, dropdown_id, option_text):
-        """Strategy: Opens the menu and uses keyboard simulation to select."""
-        container = self.get_dropdown_container(dropdown_id)
-        expect(container).to_be_visible()
-        container.click()
-
+    def select_dropdown_by_type(self ,option_text):
         # We use the keyboard API for speed and to avoid scrolling issues
         self.page.keyboard.type(option_text)
         self.page.keyboard.press("Enter")
 
-        return container  # Return the container for verification in the calling method
-        
-    def select_dropdown_by_click(self, dropdown_id, option_text):
-        """Strategy: Opens the menu and clicks the specific text option."""
-        container = self.get_dropdown_container(dropdown_id)
-        expect(container).to_be_visible()
-        container.click()
-
+    def select_dropdown_by_click(self, option_text):
+        # We use the scroll and clcik the option fn directly, which is more robust but can be slower
         option = self.get_dropdown_option(option_text)
         # React menus can have a slight 'fade-in' animation
         # This wait ensures the click actually registers
         option.wait_for(state="visible") 
         option.click()
 
-        return container  # Return the container for verification in the calling method
-        
     def upload_file(self, file_path, file_name):
-        # 1. Ensure the file input is visible and enabled before interacting
-        expect(self.file_picture_upload).to_be_visible()
-        expect(self.file_picture_upload).to_be_enabled()
         # 1. Combine the folder path with the file name
         file_path = file_path + file_name
 
@@ -168,20 +147,24 @@ class RegistrationPage:
 
         return self.file_picture_upload  # Return the locator for verification in the calling method
 
-        # # 3. Verification
-        # actual_value = self.file_picture_upload.input_value()
-        # assert file_name in actual_value
-        # print(f"Verified: File '{file_name}' uploaded successfully from absolute path.")
 
     def fill_form(self, fname, lname, email, phone_num , gender=None, subjects=None, hobbies=[], address=None, day=None, month=None, year=None, file_path=None, file_name=None, state=None, city=None, use_keyboard=None):
       
         # We chain the 'type_text' action with our 'get_input' locator
+        expect(self.get_input("First Name")).to_be_visible()
+        expect(self.get_input("First Name")).to_be_enabled()
         expect(self.type_text(self.get_input("First Name"), fname)).to_have_value(fname)
         
+        expect(self.get_input("Last Name")).to_be_visible()
+        expect(self.get_input("Last Name")).to_be_enabled()
         expect(self.type_text(self.get_input("Last Name"), lname)).to_have_value(lname)
-
+        
+        expect(self.get_input("name@example.com")).to_be_visible()
+        expect(self.get_input("name@example.com")).to_be_enabled()
         expect(self.type_text(self.get_input("name@example.com"), email)).to_have_value(email)
 
+        expect(self.get_input("Mobile Number")).to_be_visible()
+        expect(self.get_input("Mobile Number")).to_be_enabled()
         expect(self.type_text(self.get_input("Mobile Number"), phone_num)).to_have_value(phone_num)
 
         expect(self.select_gender( "Male" )).to_be_checked()
@@ -193,8 +176,8 @@ class RegistrationPage:
         # This method takes a list of hobbies and checks the corresponding checkboxes
         # self.check_checkboxs(hobbies)  # Example of checking multiple checkboxes
         for hobby in hobbies:
-            checkbox_locator = expect(self.get_checkbox(hobby)).to_be_visible()
-            expect(self.check_hobby( hobby )).to_be_checked()
+            expect(self.get_checkbox(hobby)).to_be_visible()
+            expect(self.check_hobby( self.get_checkbox(hobby) )).to_be_checked()
 
         # Subjects (Handles the auto-suggest input)
         expect(self.subjects_input).to_be_visible()
@@ -203,27 +186,60 @@ class RegistrationPage:
         expect(self.subjects_input).to_have_value("")  # After selection, the input should
         
         # Current Address (Handles textarea automatically!)
+        expect(self.get_input("Current Address")).to_be_visible()
+        expect(self.get_input("Current Address")).to_be_enabled()
         expect(self.type_text(self.get_input("Current Address"), address)).to_have_value(address)
 
         # selecting date of birth using the method we defined
-        self.select_dob(day, month, year)  # Example of selecting a date of birth
+        # 1. Open Calendar
+        self.get_date_input().click()
+        expect(self.get_date_select("month")).to_be_visible()
+        expect(self.get_date_select("year")).to_be_visible() 
+        self.select_date_of_birth(day,month,year)  # Example of selecting a date of birth
         # 4. Verify
-        self.verify_date_ui(day, month, year)
+        selected_date = self.page.locator(self.DATE_INPUT).input_value()
+        expected_date_string = self.format_date_of_birth(day,month,year)
+        self.verify_selected_date(selected_date, expected_date_string)
 
         # Now you can call the file upload method with the path to your file
-        result = self.upload_file(file_path, file_name)  # Example of uploading a file
+        # 1. Ensure the file input is visible and enabled before interacting
+        expect(self.file_picture_upload).to_be_visible()
+        expect(self.file_picture_upload).to_be_enabled()
+        result__file_locator = self.upload_file(file_path, file_name)  # Example of uploading a file
         # Verification for file upload can be tricky since the input often just shows the file name or a fake path
         # You can verify that the file name is part of the input's value
-        actual_value = result.input_value()
+        actual_value = result__file_locator.input_value()
         assert file_name in actual_value, f"File upload failed! Expected '{file_name}' to be part of '{actual_value}'"
         print(f"Verified: File '{file_name}' uploaded successfully with value '{actual_value}'.")
 
+
+        """Strategy: Opens the menu and clicks the specific text option."""
+        
+
         if use_keyboard:
-            expect(self.select_dropdown_by_type("state", state)).to_contain_text(state)
-            expect(self.select_dropdown_by_type("city", city)).to_contain_text(city)
+            dropdown = self.get_dropdown_container("state")
+            expect(dropdown).to_be_visible()
+            dropdown.click()
+            self.select_dropdown_by_type(state)
+            expect(dropdown).to_contain_text(state)
+
+            dropdown = self.get_dropdown_container("city")
+            expect(dropdown).to_be_visible()
+            dropdown.click()
+            self.select_dropdown_by_type(city)
+            expect(dropdown).to_contain_text(city)
         else:
-            expect(self.select_dropdown_by_click("state", state)).to_contain_text(state)
-            expect(self.select_dropdown_by_click("city", city)).to_contain_text(city)
+            dropdown = self.get_dropdown_container("state")
+            expect(dropdown).to_be_visible()
+            dropdown.click()
+            self.select_dropdown_by_click(state)
+            expect(dropdown).to_contain_text(state)
+
+            dropdown = self.get_dropdown_container("city")
+            expect(dropdown).to_be_visible()
+            dropdown.click()
+            self.select_dropdown_by_click(city)
+            expect(dropdown).to_contain_text(city)
 
         # Finally, submit the form
         expect(self.submit_btn).to_be_visible()
